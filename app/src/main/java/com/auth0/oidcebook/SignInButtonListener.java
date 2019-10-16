@@ -43,7 +43,7 @@ public class SignInButtonListener implements View.OnClickListener {
         String clientID = "4pdR2Lj6ZcqHPWtgztj4fCQZLjM7FgpT";
         String codeChallengeMethod = "S256";
         String packageName = "com.auth0.oidcebook";
-        String redirectURI = "demo://" + oidcProvider + "/android/" + packageName + "/callback";
+        String redirectURI = "oidc-sample://" + oidcProvider + "/android/" + packageName + "/callback";
 
         String codeVerifier = createCodeVerifier();
         String codeChallenge = createCodeChallenge(codeVerifier);
