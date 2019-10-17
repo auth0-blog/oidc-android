@@ -2,4 +2,5 @@
     <string name="app_name">OIDC Ebook</string>
     <string name="shared_preferences_name">oidc-ebook</string>
     <string name="code_verifier">code-verifier</string>
+    <string name="profilePicture">User Profile</string>
 </resources>

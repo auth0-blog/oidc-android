@@ -3,14 +3,13 @@ package com.auth0.oidcebook;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.customtabs.CustomTabsIntent;
 import android.util.Base64;
 import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.auth0.jwt.JWT;
@@ -123,7 +122,7 @@ public class OIDCUtils {
         customTabsIntent.launchUrl(context, Uri.parse(authorizationURL));
     }
 
-    public static void fetchTokens(final Context context, final String authorizationCode) {
+    public static RequestQueue fetchTokens(@NonNull final Context context, @NonNull final String authorizationCode) {
         final String oidcProvider = "oidc-handbook.auth0.com";
         final String clientID = "4pdR2Lj6ZcqHPWtgztj4fCQZLjM7FgpT";
         final String packageName = "com.auth0.oidcebook";
@@ -134,35 +133,38 @@ public class OIDCUtils {
         String url ="https://" + oidcProvider + "/oauth/token";
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
+                response -> {
+                    try {
                         JSONObject parsedResponse = parseJson(response);
                         DecodedJWT jwt = decodeIDToken(parsedResponse);
-                        String welcome = "Hello, " + jwt.getClaim("name").asString() + "! Glad to see you here.";
-                        Toast.makeText(context, welcome, Toast.LENGTH_LONG).show();
+                        String name = jwt.getClaim("name").asString();
+                        String picture = jwt.getClaim("picture").asString();
+                        String accessToken = parsedResponse.getString("access_token");
+                        UserInfo userInfo = UserInfo.getInstance();
+                        userInfo.setUserInfo(name, picture, accessToken);
+                    } catch (Exception e) {
+                        Toast.makeText(context, e.toString(), Toast.LENGTH_LONG).show();
                     }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(context, error.toString(), Toast.LENGTH_LONG).show();
-            }
-        }) {
-            @Override
-            protected Map<String, String> getParams()
-            {
-                Map<String, String> params = new HashMap<>();
-                params.put("grant_type", "authorization_code");
-                params.put("client_id", clientID);
-                params.put("code_verifier", readCodeVerifier(context));
-                params.put("code", authorizationCode);
-                params.put("redirect_uri", redirectURI);
+                },
+                error -> {
+                    Toast.makeText(context, error.toString(), Toast.LENGTH_LONG).show();
+                }) {
+                    @Override
+                    protected Map<String, String> getParams()
+                    {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("grant_type", "authorization_code");
+                        params.put("client_id", clientID);
+                        params.put("code_verifier", readCodeVerifier(context));
+                        params.put("code", authorizationCode);
+                        params.put("redirect_uri", redirectURI);
 
-                return params;
-            }
-        };
+                        return params;
+                    }
+                };
 
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
+        return queue;
     }
 }
